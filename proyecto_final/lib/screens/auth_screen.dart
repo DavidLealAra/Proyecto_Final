@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/app_user.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -68,6 +69,8 @@ class _AuthScreenState extends State<AuthScreen> {
             .set({
           'name': _nameCtrl.text.trim(),
           'email': email,
+          'role': AppUser.roleCustomer,
+          'isActive': true,
           'createdAt': FieldValue.serverTimestamp(),
         });
       }
