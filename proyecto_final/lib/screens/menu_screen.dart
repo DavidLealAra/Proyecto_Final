@@ -139,23 +139,40 @@ class _MenuScreenState extends State<MenuScreen>
                   return Card(
                     child: ListTile(
                       isThreeLine: true,
-                      title: Text(it.name),
-                      subtitle: Text(it.description),
-                      trailing: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '${it.price.toStringAsFixed(2)} €',
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 6),
-                          FilledButton.tonal(
-                            onPressed: () => _add(it),
-                            child: const Text('Añadir'),
-                          ),
-                        ],
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      title: Text(
+                        it.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(
+                        it.description,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 140),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '${it.price.toStringAsFixed(2)} €',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              height: 36,
+                              child: FilledButton.tonal(
+                                onPressed: () => _add(it),
+                                child: const Text('Añadir'),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   );
