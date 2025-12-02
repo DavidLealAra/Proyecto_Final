@@ -20,6 +20,7 @@ class _MenuScreenState extends State<MenuScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   final Map<MenuItem, int> _cart = {};
+  PaymentMethod _paymentMethod = PaymentMethod.cashOnDelivery;
 
   final LatLng _vigoLatLng = const LatLng(42.2406, -8.7207); // Coordenada fallback
 
@@ -51,6 +52,8 @@ class _MenuScreenState extends State<MenuScreen>
   double get _total =>
       _cart.entries.fold(0.0, (t, e) => t + e.key.price * e.value);
 
+  bool get _isDelivery => widget.order.orderType == OrderType.delivery;
+
   String _orderTypeText(OrderType t) {
     switch (t) {
       case OrderType.delivery:
@@ -59,6 +62,15 @@ class _MenuScreenState extends State<MenuScreen>
         return 'En restaurante';
       case OrderType.takeAway:
         return 'Para llevar';
+    }
+  }
+
+  String _paymentMethodText(PaymentMethod pm) {
+    switch (pm) {
+      case PaymentMethod.card:
+        return 'Pago con tarjeta online';
+      case PaymentMethod.cashOnDelivery:
+        return 'Pago al repartidor';
     }
   }
 
@@ -126,10 +138,12 @@ class _MenuScreenState extends State<MenuScreen>
                   final it = items[i];
                   return Card(
                     child: ListTile(
+                      isThreeLine: true,
                       title: Text(it.name),
                       subtitle: Text(it.description),
                       trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
                             '${it.price.toStringAsFixed(2)} €',
@@ -213,39 +227,51 @@ class _MenuScreenState extends State<MenuScreen>
                       child: Row(
                         children: [
                           Expanded(
-                            child: Text(
-                              'Total: ${_total.toStringAsFixed(2)} €',
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
+                          child: Text(
+                            'Total: ${_total.toStringAsFixed(2)} €',
+                            style: Theme.of(context).textTheme.titleLarge,
                           ),
-                          FilledButton(
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (ctx) => AlertDialog(
-                                  title: const Text('Pedido confirmado'),
-                                  content: Text(
-                                    'Gracias por tu pedido en ${r.name}.\n'
-                                    'Tipo: ${_orderTypeText(widget.order.orderType)}'
-                                    '${widget.order.orderType ==
-                                                OrderType.dineIn &&
-                                            widget.order.tableNumber != null
-                                        ? '\nMesa: ${widget.order.tableNumber}'
-                                        : ''}\n'
-                                    'Total: ${_total.toStringAsFixed(2)} €',
+                          ),
+                          if (_isDelivery) ...[
+                            const SizedBox(width: 12),
+                            Flexible(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Método de pago',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge),
+                                  RadioListTile<PaymentMethod>(
+                                    contentPadding: EdgeInsets.zero,
+                                    title: const Text('Pagar al repartidor'),
+                                    subtitle: const Text(
+                                        'Efectivo o tarjeta al recibir el pedido'),
+                                    value: PaymentMethod.cashOnDelivery,
+                                    groupValue: _paymentMethod,
+                                    onChanged: (m) {
+                                      if (m == null) return;
+                                      setState(() => _paymentMethod = m);
+                                    },
                                   ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(ctx);
-                                        setState(() => _cart.clear());
-                                      },
-                                      child: const Text('OK'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
+                                  RadioListTile<PaymentMethod>(
+                                    contentPadding: EdgeInsets.zero,
+                                    title: const Text('Pagar ahora con tarjeta'),
+                                    subtitle: const Text(
+                                        'Pasarela segura para pedidos a domicilio'),
+                                    value: PaymentMethod.card,
+                                    groupValue: _paymentMethod,
+                                    onChanged: (m) {
+                                      if (m == null) return;
+                                      setState(() => _paymentMethod = m);
+                                    },
+                              ),
+                            ],
+                              ),
+                            ),
+                          ],
+                          FilledButton(
+                            onPressed: _confirmOrder,
                             child: const Text('Confirmar pedido'),
                           ),
                         ],
@@ -280,4 +306,137 @@ class _MenuScreenState extends State<MenuScreen>
       ),
     );
   }
+
+  void _confirmOrder() {
+    if (_isDelivery && _paymentMethod == PaymentMethod.card) {
+      _openCardPaymentSheet();
+    } else {
+      _showConfirmationDialog(paymentMethod: _paymentMethod);
+    }
+  }
+
+  Future<void> _openCardPaymentSheet() async {
+    final cardCtrl = TextEditingController();
+    final expiryCtrl = TextEditingController();
+    final cvcCtrl = TextEditingController();
+
+    await showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+          top: 16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Pagar con tarjeta',
+                style: Theme.of(ctx).textTheme.titleLarge),
+            const SizedBox(height: 12),
+            TextField(
+              controller: cardCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Número de tarjeta',
+                hintText: '4242 4242 4242 4242',
+              ),
+            ),
+            TextField(
+              controller: expiryCtrl,
+              keyboardType: TextInputType.datetime,
+              decoration: const InputDecoration(
+                labelText: 'Caducidad',
+                hintText: 'MM/AA',
+              ),
+            ),
+            TextField(
+              controller: cvcCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'CVC',
+                hintText: '123',
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () {
+                  final cardNumber = cardCtrl.text.replaceAll(' ', '');
+                  if (cardNumber.length < 12 || expiryCtrl.text.isEmpty) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(
+                        content: Text('Revisa los datos de la tarjeta'),
+                      ),
+                    );
+                    return;
+                  }
+                  Navigator.pop(ctx);
+                  _showConfirmationDialog(
+                    paymentMethod: PaymentMethod.card,
+                    maskedCard: _maskCard(cardNumber),
+                  );
+                },
+                child: const Text('Pagar y confirmar'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _maskCard(String raw) {
+    if (raw.length < 4) return '****';
+    final last4 = raw.substring(raw.length - 4);
+    return '•••• •••• •••• $last4';
+  }
+
+  Future<void> _showConfirmationDialog({
+    required PaymentMethod paymentMethod,
+    String? maskedCard,
+  }) async {
+    final r = widget.order.restaurant;
+    final paymentLine = _isDelivery
+        ? '\nPago: ${_paymentMethodText(paymentMethod)}'
+        : '';
+    final cardLine =
+        paymentMethod == PaymentMethod.card && maskedCard != null
+            ? '\nTarjeta: $maskedCard'
+            : '';
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Pedido confirmado'),
+        content: Text(
+          'Gracias por tu pedido en ${r.name}.\n'
+          'Tipo: ${_orderTypeText(widget.order.orderType)}'
+          '${widget.order.orderType == OrderType.dineIn &&
+                  widget.order.tableNumber != null
+              ? '\nMesa: ${widget.order.tableNumber}'
+              : ''}\n'
+          'Total: ${_total.toStringAsFixed(2)} €'
+          '$paymentLine'
+          '$cardLine',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() => _cart.clear());
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 }
+
+enum PaymentMethod { card, cashOnDelivery }
