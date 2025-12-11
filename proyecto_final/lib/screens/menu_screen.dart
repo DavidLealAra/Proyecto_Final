@@ -269,55 +269,56 @@ class _MenuScreenState extends State<MenuScreen>
                           top: BorderSide(color: Theme.of(context).dividerColor),
                         ),
                       ),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Expanded(
-                          child: Text(
+                          Text(
                             'Total: ${_total.toStringAsFixed(2)} €',
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
-                          ),
-                          if (_isDelivery) ...[
-                            const SizedBox(width: 12),
-                            Flexible(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Método de pago',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelLarge),
-                                  RadioListTile<PaymentMethod>(
-                                    contentPadding: EdgeInsets.zero,
-                                    title: const Text('Pagar al repartidor'),
-                                    subtitle: const Text(
-                                        'Efectivo o tarjeta al recibir el pedido'),
-                                    value: PaymentMethod.cashOnDelivery,
-                                    groupValue: _paymentMethod,
-                                    onChanged: (m) {
-                                      if (m == null) return;
-                                      setState(() => _paymentMethod = m);
-                                    },
-                                  ),
-                                  RadioListTile<PaymentMethod>(
-                                    contentPadding: EdgeInsets.zero,
-                                    title: const Text('Pagar ahora con tarjeta'),
-                                    subtitle: const Text(
-                                        'Pasarela segura para pedidos a domicilio'),
-                                    value: PaymentMethod.card,
-                                    groupValue: _paymentMethod,
-                                    onChanged: (m) {
-                                      if (m == null) return;
-                                      setState(() => _paymentMethod = m);
-                                    },
-                              ),
-                            ],
-                              ),
+                           if (_isDelivery) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              'Método de pago',
+                              style: Theme.of(context).textTheme.labelLarge,
+                            ),
+                            const SizedBox(height: 4),
+                            RadioListTile<PaymentMethod>(
+                              dense: true,
+                              visualDensity: VisualDensity.compact,
+                              contentPadding: EdgeInsets.zero,
+                              title: const Text('Pagar al repartidor'),
+                              subtitle: const Text(
+                                  'Efectivo o tarjeta al recibir el pedido'),
+                              value: PaymentMethod.cashOnDelivery,
+                              groupValue: _paymentMethod,
+                              onChanged: (m) {
+                                if (m == null) return;
+                                setState(() => _paymentMethod = m);
+                              },
+                            ),
+                            RadioListTile<PaymentMethod>(
+                              dense: true,
+                              visualDensity: VisualDensity.compact,
+                              contentPadding: EdgeInsets.zero,
+                              title: const Text('Pagar ahora con tarjeta'),
+                              subtitle: const Text(
+                                  'Pasarela segura para pedidos a domicilio'),
+                              value: PaymentMethod.card,
+                              groupValue: _paymentMethod,
+                              onChanged: (m) {
+                                if (m == null) return;
+                                setState(() => _paymentMethod = m);
+                              },
                             ),
                           ],
-                          FilledButton(
-                            onPressed: _confirmOrder,
-                            child: const Text('Confirmar pedido'),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton(
+                              onPressed: _confirmOrder,
+                              child: const Text('Confirmar pedido'),
+                            ),
                           ),
                         ],
                       ),
