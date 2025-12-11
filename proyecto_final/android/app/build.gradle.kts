@@ -27,7 +27,9 @@ android {
         applicationId = "com.example.proyecto_final"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // Cloud Firestore and other Firebase plugins require a minimum SDK of 23.
+        // Setting it here avoids manifest merge failures when building the debug variant.
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
